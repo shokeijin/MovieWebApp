@@ -1,0 +1,27 @@
+<!-- Sagt Jinja2, dass diese Datei das Layout von base.html verwenden soll -->
+{% extends 'base.html' %}
+
+<!-- Definiert den Titel-Block aus dem Head-Bereich von base.html neu -->
+{% block title %}Nutzerübersicht - MoviWeb{% endblock %}
+
+<!-- Alles innerhalb dieses Blocks wird in den 'content'-Block von base.html eingefügt -->
+{% block content %}
+    <h1>Alle Nutzer</h1>
+    <ul>
+        {% for user in users %}
+            <li>
+                <a href="{{ url_for('list_movies', user_id=user.id) }}">{{ user.name }}</a>
+            </li>
+        {% else %}
+            <li>Noch keine Nutzer vorhanden.</li>
+        {% endfor %}
+    </ul>
+
+    <hr>
+    <h2>Neuen Nutzer hinzufügen</h2>
+    <form action="{{ url_for('add_user') }}" method="post">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <button type="submit">Hinzufügen</button>
+    </form>
+{% endblock %}

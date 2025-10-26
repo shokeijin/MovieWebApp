@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Der Titel kann auch ein Block sein, um ihn pro Seite anzupassen -->
+    <title>{% block title %}MoviWeb{% endblock %}</title>
+    <!-- Verlinkt die CSS-Datei aus dem 'static'-Ordner -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <header>
+        <nav>
+            <!-- Link zur Startseite -->
+            <a href="{{ url_for('home') }}"><h1>MoviWeb</h1></a>
+        </nav>
+    </header>
+
+    <!-- Hauptinhaltsbereich, der von anderen Templates gefüllt wird -->
+    <main class="container">
+        {% block content %}
+        <!-- Standardinhalt, falls ein Kind-Template den Block nicht überschreibt (optional) -->
+        <p>Willkommen!</p>
+        {% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 MoviWeb App</p>
+    </footer>
+
+</body>
+</html>

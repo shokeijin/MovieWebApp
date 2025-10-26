@@ -1,62 +1,81 @@
-from flask import Flask
+import os
+import requests
+from flask import Flask, render_template, request, redirect, url_for
 from data_manager import DataManager
-from models import db # Importiere das db-Objekt direkt aus models
+from models import db, User  # Importiere auch das User-Modell für Abfragen
 
-# 1. App- und Datenbankinitialisierung
-# ====================================
-
-# Erstelle eine Instanz der Flask-Anwendung
+# --- App- und Datenbankinitialisierung ---
 app = Flask(__name__)
-
-# Konfiguriere die App für die Verwendung mit SQLAlchemy
-# Gib den Pfad zur Datenbankdatei an. 'sqlite:///moviweb.db' bedeutet,
-# dass eine Datei namens 'moviweb.db' im Hauptverzeichnis des Projekts erstellt wird.
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///moviweb.db'
-# Deaktiviere eine Funktion von SQLAlchemy, die wir nicht benötigen und die sonst eine Warnung ausgibt.
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialisiere die Datenbank innerhalb der Flask-Anwendung.
-# Dies verbindet das 'db'-Objekt aus models.py mit unserer konfigurierten App.
 db.init_app(app)
-
-# Erstelle eine Instanz unseres DataManagers, um mit der Datenbank zu arbeiten.
 data_manager = DataManager()
 
+# --- OMDb API Konfiguration ---
+# Lade den API-Schlüssel sicher, z.B. aus einer Umgebungsvariable
+OMDB_API_KEY = os.getenv("OMDB_API_KEY", "DEIN_DEFAULT_KEY")  # Ersetze DEIN_DEFAULT_KEY
+OMDB_URL = f"http://www.omdbapi.com/?apikey={OMDB_API_KEY}"
 
-# 2. Routen einrichten
-# ====================
 
-# Definiere eine Route für die Startseite ('/')
+# --- Routen ---
+
 @app.route('/')
 def home():
-    """Diese Funktion wird ausgeführt, wenn jemand die Haupt-URL besucht."""
-    return "Welcome to MovieWeb App!"
-
-# Hier werden später weitere Routen für Nutzer, Filme etc. hinzugefügt.
-# z.B. @app.route('/users'), @app.route('/users/<int:user_id>/movies') etc.
+    """Startseite: Zeigt alle Nutzer und ein Formular zum Hinzufügen an."""
+    users = data_manager.get_users()
+    return render_template('index.html', users=users)
 
 
-# 3. Anwendung ausführen und Datenbank erstellen
-# ============================================
+@app.route('/users', methods=['POST'])
+def add_user():
+    """Verarbeitet das Formular zum Hinzufügen eines neuen Nutzers."""
+    name = request.form.get('name')
+    if name:
+        data_manager.create_user(name=name)
+    return redirect(url_for('home'))
 
-# Der folgende Code-Block wird nur ausgeführt, wenn dieses Skript
-# direkt mit 'python app.py' gestartet wird.
+
+@app.route('/users/<int:user_id>/movies', methods=['GET', 'POST'])
+def list_movies(user_id):
+    """
+    Diese Route hat zwei Aufgaben, basierend auf der HTTP-Methode:
+    - GET: Zeigt die Lieblingsfilme eines Nutzers an.
+    - POST: Fügt einen neuen Film zur Liste des Nutzers hinzu.
+    """
+    user = User.query.get_or_404(user_id)  # Holt den Nutzer oder gibt 404 zurück
+
+    if request.method == 'POST':
+        # --- LOGIK FÜR DAS HINZUFÜGEN EINES FILMS (POST) ---
+        movie_title = request.form.get('title')
+        if movie_title:
+            # 1. Filminfos von OMDb abrufen
+            params = {'t': movie_title}
+            response = requests.get(OMDB_URL, params=params)
+
+            if response.status_code == 200 and response.json().get('Response') == 'True':
+                omdb_data = response.json()
+
+                # 2. Movie-Objekt vorbereiten
+                movie_data = {
+                    'name': omdb_data.get('Title'),
+                    'director': omdb_data.get('Director'),
+                    'year': int(omdb_data.get('Year')),
+                    'poster_url': omdb_data.get('Poster')
+                }
+
+                # 3. DataManager verwenden, um den Film hinzuzufügen
+                data_manager.add_movie(user_id=user_id, movie_data=movie_data)
+
+        return redirect(url_for('list_movies', user_id=user_id))
+
+    else:  # request.method == 'GET'
+        # --- LOGIK FÜR DAS ANZEIGEN DER FILME (GET) ---
+        movies = data_manager.get_movies(user_id=user_id)
+        return render_template('movies.html', user=user, movies=movies)
+
+
+# --- Anwendung starten ---
 if __name__ == '__main__':
-    # Erstelle die Datenbank und alle Tabellen zum ersten Mal.
-    # 'with app.app_context()' stellt sicher, dass die Anwendungskonfiguration
-    # geladen ist, bevor auf die Datenbank zugegriffen wird.
     with app.app_context():
-        # db.create_all() liest alle Klassen, die von db.Model erben (User, Movie),
-        # und erstellt die entsprechenden Tabellen in der Datenbank, falls sie noch nicht existieren.
         db.create_all()
-
-        # Optional: Einen Test-Nutzer erstellen, wenn die Datenbank leer ist
-        if not data_manager.get_users():
-             print("Datenbank ist leer. Erstelle einen ersten Test-Nutzer...")
-             data_manager.create_user(name="Alice")
-
-
-    # Starte den Flask-Entwicklungsserver.
-    # debug=True sorgt dafür, dass der Server bei Code-Änderungen automatisch neu startet
-    # und detailliertere Fehlermeldungen im Browser anzeigt.
     app.run(debug=True)
