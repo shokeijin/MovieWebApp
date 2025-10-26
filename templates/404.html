@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Seite nicht gefunden (404){% endblock %}
+
+{% block content %}
+    <h1>Hoppla! Seite nicht gefunden (404)</h1>
+    <p>Die von Ihnen gesuchte Seite existiert leider nicht.</p>
+    <p>
+        <a href="{{ url_for('home') }}">Zurück zur Startseite</a>
+    </p>
+{% endblock %}```
+Dieses Template erbt unser Standard-Layout, sodass die Fehlerseite nahtlos in das Design der App passt.
+
+### 2. Fehlerhandler in `app.py` hinzufügen
+
+Jetzt fügen wir die Logik in `app.py` hinzu, um dieses Template bei einem 404-Fehler zu rendern. Wir fügen auch gleich einen Handler für 500er-Fehler hinzu.
+
+**Aktualisierte `app.py`**```python
+# ... (alle bisherigen Imports)
+from sqlalchemy.exc import SQLAlchemyError
+
+# ... (App-Initialisierung und Konfiguration)
+
+# ===================================
+# FEHLERHANDLER
+# ===================================
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Rendert eine benutzerdefinierte Seite, wenn eine Ressource nicht gefunden wird."""
+    # Der zweite Rückgabewert ist der HTTP-Statuscode
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    """Rendert eine benutzerdefinierte Seite bei einem internen Serverfehler."""
+    # Hier könnte man den Fehler auch in eine Log-Datei schreiben
+    return render_template('500.html'), 500 # Wir müssten noch eine 500.html erstellen
+
+# ... (alle bisherigen Routen @app.route(...))
+
+# ... (if __name__ == '__main__':)

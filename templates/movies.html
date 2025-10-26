@@ -8,7 +8,7 @@
 
     <hr>
     <h2>Neuen Film hinzufügen</h2>
-    <form action="{{ url_for('list_movies', user_id=user.id) }}" method="post">
+    <form action="{{ url_for('add_movie', user_id=user.id) }}" method="post">
         <label for="title">Filmtitel:</label>
         <input type="text" id="title" name="title" required>
         <button type="submit">Suchen & Hinzufügen</button>
