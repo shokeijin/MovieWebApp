@@ -1,27 +1,35 @@
-<!-- Sagt Jinja2, dass diese Datei das Layout von base.html verwenden soll -->
-{% extends 'base.html' %}
+<!-- Diese Datei erbt das Layout, den Header und Footer von base.html -->
+{% extends "base.html" %}
 
-<!-- Definiert den Titel-Block aus dem Head-Bereich von base.html neu -->
+<!-- Überschreibt den Titel-Block in der base.html -->
 {% block title %}Nutzerübersicht - MoviWeb{% endblock %}
 
-<!-- Alles innerhalb dieses Blocks wird in den 'content'-Block von base.html eingefügt -->
+<!-- Füllt den leeren content-Block in der base.html mit unserem spezifischen Inhalt -->
 {% block content %}
-    <h1>Alle Nutzer</h1>
-    <ul>
+    <h1>Nutzer</h1>
+    <p>Wähle einen Nutzer aus, um seine Lieblingsfilme zu sehen, oder füge einen neuen Nutzer hinzu.</p>
+
+    <ul class="user-list">
+        <!-- Jinja2-Schleife: Iteriert über die 'users'-Liste, die von Flask übergeben wird -->
         {% for user in users %}
-            <li>
-                <a href="{{ url_for('list_movies', user_id=user.id) }}">{{ user.name }}</a>
-            </li>
+        <li class="user-entry">
+            <!-- url_for erstellt dynamisch den Link zur richtigen Route -->
+            <!-- Wir verwenden hier 'list_movies', wie unsere Funktion in app.py heißt -->
+            <a href="{{ url_for('list_movies', user_id=user.id) }}" class="btn">{{ user.name }}</a>
+        </li>
         {% else %}
-            <li>Noch keine Nutzer vorhanden.</li>
+            <!-- Dieser Block wird angezeigt, wenn die 'users'-Liste leer ist -->
+            <li class="user-entry">Noch keine Nutzer vorhanden.</li>
         {% endfor %}
     </ul>
 
     <hr>
+
     <h2>Neuen Nutzer hinzufügen</h2>
+    <!-- Das Formular sendet seine Daten per POST an die Route, die mit der Funktion 'add_user' verknüpft ist -->
     <form action="{{ url_for('add_user') }}" method="post">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
-        <button type="submit">Hinzufügen</button>
+        <label for="name">Name des Nutzers:</label>
+        <input type="text" id="name" name="name" placeholder="z.B. Maria" required>
+        <button type="submit">Nutzer erstellen</button>
     </form>
 {% endblock %}
