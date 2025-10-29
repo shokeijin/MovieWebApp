@@ -1,8 +1,14 @@
+# app.py
+
 import os
 import requests
 from flask import Flask, render_template, request, redirect, url_for, flash
 from data_manager import DataManager
 from models import db, User
+from dotenv import load_dotenv  # <-- 1. HIER IMPORTIEREN
+
+# Lade die Umgebungsvariablen aus der .env Datei
+load_dotenv()  # <-- 2. HIER AUFRUFEN
 
 # === 1. INITIALISIERUNG UND KONFIGURATION ===
 
@@ -20,10 +26,10 @@ db.init_app(app)
 data_manager = DataManager()
 
 # --- OMDb API Konfiguration ---
-# HINWEIS: Ihr API-Schlüssel wurde hier direkt eingetragen.
-# Für eine Produktionsumgebung wird dringend empfohlen, stattdessen Umgebungsvariablen zu verwenden.
-OMDB_API_KEY = "ab436000"  # <--- IHR API-SCHLÜSSEL IST HIER EINGEFÜGT
+# Der API-Schlüssel wird jetzt sicher aus der Umgebungsvariable geladen.
+OMDB_API_KEY = os.getenv('OMDB_API_KEY') # <-- 3. CODE GEÄNDERT
 OMDB_URL = f"http://www.omdbapi.com/?apikey={OMDB_API_KEY}"
+
 
 
 # === 2. FEHLERHANDLER ===
